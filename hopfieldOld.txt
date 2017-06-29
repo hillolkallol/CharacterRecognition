@@ -1,0 +1,84 @@
+import numpy as np
+import os, os.path
+
+def to_pattern(letter):
+    from numpy import array
+    return array([+1 if c=='1' else -1 for c in letter.replace('\n','')])
+
+def display(pattern):
+    from pylab import imshow, cm, show
+    imshow(pattern.reshape((20,20)),cmap=cm.binary, interpolation='nearest')
+    show()
+
+def train(patterns):
+    from numpy import zeros, outer, diag_indices
+    r,c = patterns.shape
+    W = zeros((c,c))
+    for p in patterns:
+        W = W + outer(p,p)
+    W[diag_indices(c)] = 0
+    return W/r
+
+def recall(W, findPatterns, steps=1):
+    from numpy import vectorize, dot
+    sgn = vectorize(lambda x: -1 if x<0 else +1)
+    for _ in range(steps):
+        findPatterns = sgn(dot(findPatterns, W))
+        if(findPatterns == oldPatterns):
+            break
+        oldPatterns = findPatterns
+    return findPatterns
+    # trueValue = True
+    # while(trueValue):
+    #     findPatterns = sgn(dot(findPatterns,W))
+    #     for i in range(0, patterns):
+    #         if (findPatterns == patterns[i]):
+    #             trueValue = False
+    #             break
+        # display(patterns)
+    return findPatterns
+
+def hopfield_energy(W, hEPatterns):
+    from numpy import array, dot
+    return array([-0.5*dot(dot(p.T,W),p) for p in hEPatterns])
+
+def main():
+    azarray = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+               'V', 'W', 'X', 'Y', 'Z']
+    subfolder = ['upper', 'lower']
+    patterns = np.empty((0, 400))
+
+    for i in range(0, 1):
+        for j in range(0, 26):
+            items = len([name for name in os.listdir('ResizedOne/' + str(subfolder[i]) + '/' + str(azarray[j]))
+                 if name.endswith('.txt') and os.path.isfile(os.path.join('ResizedOne/' + str(subfolder[i]) + '/' + str(azarray[j]), name))])
+
+            for k in range(0,items):
+                # filename_input = 'training/' + str(subfolder[i]) + '/' + str(azarray[j]) + '/' + str(k)
+                filename = 'ResizedOne/' + str(subfolder[i]) + '/' + str(azarray[j]) + '/' + str(k)
+                print(filename)
+                try:
+                    letter = open(filename + '.txt').read()
+                except:
+                    print('****** Exception! ******')
+                    pass
+                letter = letter.replace(' ', '')
+                patterns = np.append(patterns, [to_pattern(letter)], axis=0)
+    try:
+        testing = open('3.txt').read()
+        testing = testing.replace(' ', '')
+    except:
+        print('****** Exception! ******')
+        pass
+
+    # display(to_pattern(testing))
+    # patterns = array([to_pattern(letterA), to_pattern(letterB)])
+    # print(patterns.size)
+    # print(patterns.shape)
+    # print(len(patterns))
+    display(recall(train(patterns), to_pattern(testing), steps= 1))
+    print(hopfield_energy(train(patterns), to_pattern(testing)))
+
+if __name__ == "__main__":
+        main()
+
